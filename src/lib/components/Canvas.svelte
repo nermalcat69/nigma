@@ -226,10 +226,14 @@
       const rect = canvasEl.getBoundingClientRect();
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
-      const delta = e.deltaY > 0 ? 1 / 1.1 : 1.1;
-      toolStore.zoomTo(toolStore.viewport.zoom * delta, sx, sy);
+      // Proportional zoom: small trackpad movements → tiny step; large wheel clicks → bigger step.
+      // Math.pow(0.999, deltaY) gives ~9% per 100px delta (one wheel click) and ~0.3% per 3px
+      // delta (gentle trackpad nudge), avoiding the runaway 10%-per-event fixed step.
+      const factor = Math.pow(0.999, e.deltaY);
+      toolStore.zoomTo(toolStore.viewport.zoom * factor, sx, sy);
     } else {
-      toolStore.panBy(-e.deltaX, -e.deltaY);
+      // Pan: scale down raw delta so a fast trackpad swipe doesn't whip across the canvas
+      toolStore.panBy(-e.deltaX * 0.65, -e.deltaY * 0.65);
     }
   }
 
